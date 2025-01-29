@@ -1,5 +1,4 @@
 #include <iostream>
-#include <vector>
 #include <cstring>
 #include <iomanip>
 #include "Student.h"
@@ -15,7 +14,10 @@ void recurse (int id, Node* &head, Node* previous, Node* current);
 void remove (Node* &head);
 void display (Node* n);
 void average (Node* s, int students, float runningTotal);
+void generate (); // TODO
 void quit (bool &status);
+
+const int SIZE = 211;
 
 // main function
 int main () {
@@ -23,8 +25,11 @@ int main () {
 
   bool isRunning = true;
   // head node
-  Node* head = NULL;
-
+  Node** ht = new Node* [SIZE];
+  for (int i = 0; i < SIZE; i++) {
+    ht[i] = NULL;
+  }
+  
   while (isRunning) {
     printCmds ();
     // input
@@ -44,8 +49,11 @@ int main () {
     }
     // commands
     cmd = checkInput(input);
-    if (cmd == 5) { // QUIT
+    if (cmd == 6) { // QUIT
       quit (isRunning);
+    }
+    else if (cmd == 5) { // GENERATE STUDENTS (RANDOM)
+      generate (); // TODO
     }
     else if (cmd == 4) { // AVERAGE
       average (head, 0, 0);
@@ -75,6 +83,7 @@ void printCmds () {
   cout << "PRINT (print student list)" << endl;
   cout << "DELETE (delete student)" << endl;
   cout << "AVERAGE (print average GPA)" << endl;
+  cout << "GENERATE (generate random students)" << endl;
   cout << "QUIT (quit program)" << endl;
 }
 
@@ -85,16 +94,21 @@ void printCmds () {
   2 = PRINT
   3 = DELETE
   4 = AVERAGE
-  5 = QUIT
+  5 = GENERATE
+  6 = QUIT
  */
 int checkInput (char input[80]) {
   if (strcmp(input, "ADD") == 0) { return 1; }
   else if (strcmp(input, "PRINT") == 0) { return 2; }
   else if (strcmp(input, "DELETE") == 0) { return 3; }
   else if (strcmp(input, "AVERAGE") == 0) { return 4; }
-  else if (strcmp(input, "QUIT") == 0) { return 5; }
+  else if (strcmp(input, "GENERATE") == 0) { return 5; }
+  else if (strcmp(input, "QUIT") == 0) { return 6; }
   return 0;
 }
+
+
+// TODODODODODOO
 
 // primary methods
 // 0: INSERT
