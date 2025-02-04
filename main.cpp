@@ -12,8 +12,8 @@ using namespace std;
 // FUNCTION PROTOTYPES
 void printCmds ();
 // adding students
-void insert_student (Node** &ht, Student* s, int size);
-void add (Node** &ht, int size);
+void insert_student (Node** &ht, Student* s, int &size);
+void add (Node** &ht, int &size);
 // removing students
 void remove_student (Node** &ht, int id, int size);
 void remove (Node** &ht, int size);
@@ -45,12 +45,13 @@ int main () {
 
   // main loop
   while (isRunning) {
-    printCmds ();
+    printCmds (); cout << endl;
+
     // input
     string input;
     getline(cin, input);
 
-    cout << "Processing..." << endl;
+    cout << "SIZE OF LIST: " << size << endl;
 
     // QUIT
     if (input == "QUIT") { quit (isRunning); }
@@ -99,8 +100,14 @@ void processNames (string fnames[200], string lnames[200]) {
 // hash function - TODODODODODO
 int hashID (int id, int size) {
   int idx = 0;
-  
-  for (
+  int digits[6];
+  int n = id;
+  for (int i = 5; i >= 0; i--) {
+    digits[i] = n % 10;
+    n /= 10;
+  }
+
+  idx = 100 * (digits[0] + digits[1]) + 10 * (digits[2] + digits[3]) + digits[4] + digits[5] - digits[0] * digits[5];
   
   return idx % size;  
 }
@@ -126,7 +133,7 @@ void rehash (Node** &ht, int newSize, int oldSize) {
 
 // primary methods
 // 1: ADD
-void insert_student (Node** &ht, Student* s, int size) {
+void insert_student (Node** &ht, Student* s, int &size) {
   int idx = hashID(s->getID(), size);
 
   // no collision
@@ -142,22 +149,23 @@ void insert_student (Node** &ht, Student* s, int size) {
     while (temp->getNext() != NULL) {
       temp = temp->getNext(); i++;
     }
-    if (i > 3) {
+    temp->setNext(new Node(s));
+    temp = temp->getNext();
+    temp->setNext(NULL);
+      
+    if (i >= 3) { // more than or equal to 3 nodes after the head
       // rehash and change size
       cout << "Too many collisions! Rehashing..." << endl;
       int newSize = 2 * size + 1; 
       rehash (ht, newSize, size);
-    }
-    else {
-      temp->setNext(new Node(s));
-      temp = temp->getNext();
-      temp->setNext(NULL);
+      size = newSize;
+      cout << "NEW SIZE: " << size << endl;
     }
   }
   return;
 }
 
-void add (Node** &ht, int size) {
+void add (Node** &ht, int &size) {
   string first, last;
   int id;
   float gpa;
@@ -178,6 +186,7 @@ void add (Node** &ht, int size) {
   s->setGPA (gpa);
   // insert in hash table
   insert_student (ht, s, size);
+  cout << size << endl;
   return;
 }
 
@@ -199,6 +208,7 @@ void display (Node** ht, int size) {
 // 3: DELETE
 void remove_student (Node** &ht, int id, int size) {
   int idx = hashID(id, size);
+  cout << idx << " " << size << endl;
   Node* cur = ht[idx]; Node* prev = NULL;
   bool found = false;
 
@@ -254,10 +264,9 @@ void generate (Node** &ht, int size, string fnames[200], string lnames[200]) {
 
   srand(time(NULL));
   int id = 123456;
-
   for (int i = 0; i < n; i++) {
     int fidx = rand() % 200, lidx = rand() % 200;
-    id ++;
+    int id = rand() % 900000 + 100000;
     float gpa = rand() % 400 * 0.01;
     string first = fnames[fidx];
     string last = lnames[lidx];
