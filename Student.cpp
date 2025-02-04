@@ -1,13 +1,13 @@
 #include <iostream>
-#include <cstring>
+#include <string>
 #include "Student.h"
 
 using namespace std;
 
 // constructor/destructor
 Student::Student() {
-  first = new char[80];
-  last = new char[80];
+  string* first = new string();
+  string* last = new string();
   id = 0;
   gpa = 0.0;
 }
@@ -20,11 +20,11 @@ Student::~Student() {
 
 // getters
 // get name
-char* Student::getFirst () {
+string* Student::getFirst () {
   return first;
 }
 
-char* Student::getLast () {
+string* Student::getLast () {
   return last;
 }
 
@@ -40,18 +40,20 @@ float Student::getGPA() {
 
 // setters
 // set name
-void Student::setFirst (char* f) {
-  strcpy(first, f);
+void Student::setFirst (string* f) {
+  first = f;
 }
 
-void Student::setLast (char* l) {
-  strcpy(last, l);
+void Student::setLast (string* l) {
+  last = l;
 }
 
+// set gpa
 void Student::setGPA (float g) {
   gpa = g;
 }
 
+// set id
 void Student::setID (int i) {
   id = i;
 }

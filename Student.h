@@ -1,7 +1,7 @@
 #ifndef STUDENT_H
 #define STUDENT_H
 
-#include <cstring>
+#include <string>
 
 using namespace std;
 
@@ -11,18 +11,18 @@ class Student {
   Student();
   ~Student();
   // getters
-  char* getFirst();
-  char* getLast();
+  string* getFirst();
+  string* getLast();
   int getID();
   float getGPA();
   // setters
-  void setFirst (char*);
-  void setLast (char*);
+  void setFirst (string*);
+  void setLast (string*);
   void setID(int);
   void setGPA (float);
  private:
-  char* first;
-  char* last;
+  string* first;
+  string* last;
   int id;
   float gpa;
 };
