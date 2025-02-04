@@ -1,32 +1,34 @@
 #include <iostream>
 #include <cstring>
 #include <iomanip>
+#include <fstream>
 #include "Student.h"
 #include "Node.h"
 
 using namespace std;
 
 // function prototypes
-int checkInput (char input[80]);
 void printCmds ();
-void add (Node* &head);
-void recurse (int id, Node* &head, Node* previous, Node* current);
-void remove (Node* &head);
-void display (Node* n);
-void average (Node* s, int students, float runningTotal);
-void generate (); // TODO
+void insert_student (Node** &ht, Student* s, int size);
+void add (Node** &ht, int size);
+void remove_student (Node** &ht, int id, int size);
+void remove (Node** &ht, int size);
+void display (Node** ht, int size);
+void generate (Node** &ht, int size); // TODO
 void quit (bool &status);
 
-const int SIZE = 211;
+int hash (int id, int size);
+void rehash (Node** &ht, int newSize, int oldSize);
 
 // main function
 int main () {
   cout << "Beginning the Student List program." << endl;
 
   bool isRunning = true;
-  // head node
-  Node** ht = new Node* [SIZE];
-  for (int i = 0; i < SIZE; i++) {
+  // hash table
+  int size = 211;  
+  Node** ht = new Node* [size];
+  for (int i = 0; i < size; i++) {
     ht[i] = NULL;
   }
   
@@ -47,26 +49,18 @@ int main () {
       cin.get(input, 80);
       cin.get();
     }
-    // commands
-    cmd = checkInput(input);
-    if (cmd == 6) { // QUIT
-      quit (isRunning);
-    }
-    else if (cmd == 5) { // GENERATE STUDENTS (RANDOM)
-      generate (); // TODO
-    }
-    else if (cmd == 4) { // AVERAGE
-      average (head, 0, 0);
-    }
-    else if (cmd == 3) { // DELETE
-      remove (head);
-    }
-    else if (cmd == 2) { // PRINT
-      display (head);
-    }
-    else if (cmd == 1) { // ADD
-      add (head);
-    }
+
+    // QUIT
+    if (strcmp(input, "QUIT") == 0) { quit (isRunning); }
+    // GENERATE
+    else if (strcmp(input, "GENERATE") == 0) { generate (ht); } // TODO
+    // DELETE
+    else if (strcmp(input, "DELETE") == 0) { remove (ht); }
+    // PRINT
+    else if (strcmp(input, "PRINT") == 0) { display (ht); }
+    // ADD
+    else if (strcmp(input, "ADD") == 0) { add (ht); }
+    // ???
     else {
       cout << "Unknown error occurred." << endl;
       isRunning = false;
@@ -82,178 +76,166 @@ void printCmds () {
   cout << "ADD (add student)" << endl;
   cout << "PRINT (print student list)" << endl;
   cout << "DELETE (delete student)" << endl;
-  cout << "AVERAGE (print average GPA)" << endl;
   cout << "GENERATE (generate random students)" << endl;
   cout << "QUIT (quit program)" << endl;
 }
 
-// parse move input
-/*
-  0 = bad input
-  1 = ADD
-  2 = PRINT
-  3 = DELETE
-  4 = AVERAGE
-  5 = GENERATE
-  6 = QUIT
- */
-int checkInput (char input[80]) {
-  if (strcmp(input, "ADD") == 0) { return 1; }
-  else if (strcmp(input, "PRINT") == 0) { return 2; }
-  else if (strcmp(input, "DELETE") == 0) { return 3; }
-  else if (strcmp(input, "AVERAGE") == 0) { return 4; }
-  else if (strcmp(input, "GENERATE") == 0) { return 5; }
-  else if (strcmp(input, "QUIT") == 0) { return 6; }
-  return 0;
-}
-
-
 // TODODODODODOO
 
-// primary methods
-// 0: INSERT
-void insert (Student* &s, Node* &head, Node* previous, Node* current) {
-  // no students
-  if (head == NULL) {
-    head = new Node(s);
-    return;
-  }
-  // insert before head student
-  else if (s->getGPA() < head->getStudent()->getGPA()) {
-    Node* temp = head;
-    head = new Node(s);
-    head->setNext(temp);
-    return;
-  }
-  // last student
-  else if (current == NULL) {
-    Node* temp = new Node(s);
-    previous->setNext(temp);
-    previous->getNext()->setNext(NULL);
-    return;
-  }
-  // between students
-  else if (s->getGPA() < current->getStudent()->getGPA()) {
-    Node* temp = new Node(s);
-    previous->setNext(temp);
-    temp->setNext(current);
-    return;
-  }
-  // recurse
-  else {
-    insert(s, head, current, current->getNext());
-  }
+// hash function
+int hash (int id, int size) {
+  int idx = 0;
+  
+
+  return idx % size;  
 }
 
+void rehash (Node** &ht, int newSize, int oldSize) {
+  Node** newHT = new Node* [newSize];
+  for (int i = 0; i < oldSize; i++) {
+    Node* temp = ht[i];
+    Student* s;
+    while (temp != NULL) {
+      s = temp->getStudent();
+      insert_student (newHT, s, newSize);
+      temp = temp->getNext();
+    }
+  }
+  
+  ht = newHT;
+  return;
+}
+
+// primary methods
 // 1: ADD
-void add (Node* &head) {
+void insert_student (Node** &ht, Student* s, int size) {
+  int idx = hash(s->getID(), size);
+
+  // no collision
+  if (ht[idx] == NULL) {
+    ht[idx] = new Node(s);
+    ht[idx]->setNext(NULL);
+  }
+
+  // collision
+  else {
+    Node* temp = ht[idx];
+    int i = 1;
+    while (temp->getNext() != NULL) {
+      temp = temp->getNext(); i++;
+    }
+    if (i > 3) {
+      // rehash and change size
+      cout << "rehashing..." << endl;
+      int newSize = 2 * size + 1; // CHANGE THIS LATER
+      rehash (ht, newSize, size);
+    }
+    else {
+      temp->setNext(new Node(s));
+      temp = temp->getNext();
+      temp->setNext(NULL);
+    }
+  }
+  return;
+}
+
+void add (Node* &ht) {
   char first[80], last[80];
   int id;
   float gpa;
   // prompt for information
   cout << "Student's first name?" << endl;
-  cin.get(first, 80);
-  cin.get();
+  cin.get(first, 80); cin.get();
   cout << "Student's last name?" << endl;
-  cin.get(last, 80);
-  cin.get();
+  cin.get(last, 80); cin.get();
   cout << "Student's ID number?" << endl;
-  cin >> id;
-  cin.get();
+  cin >> id; cin.get();
   cout << "Student's GPA?" << endl;
-  cin >> gpa;
-  cin.get();
+  cin >> gpa; cin.get();
   // create student
   Student* s = new Student();
   s->setFirst (first);
   s->setLast (last);
   s->setID (id);
   s->setGPA (gpa);
-  // insert in linked list
-  insert(s, head, head, head);
+  // insert in hash table
+  insert_student (ht, s);
   return;
 }
 
 // 2: PRINT
-void display (Node* n) {
-  if (n != NULL) {
-    // print
-    Student* s = n->getStudent();
-    cout << s->getFirst() << " " << s->getLast() << " -- ID: " << s->getID();
-    cout << " -- GPA: " << fixed << setprecision(2) << s->getGPA() << endl;
-    // recurse
-    if (n->getNext() != NULL) {
-      display(n->getNext());
+void display (Node** ht, int size) {
+  for (int i = 0; i < size; i++) {
+    Node* temp = ht[i];
+    while (temp != NULL) {
+      Student* s = temp->getStudent();
+      cout << s->getFirst() << " " << s->getLast() << " -- ID: " << s->getID();
+      cout << " -- GPA: " << fixed << setprecision(2) << s->getGPA() << endl;
+      temp = temp->getNext();
     }
   }
   return;
 }
 
 // 3: DELETE
-void recurse (int id, Node* &head, Node* previous, Node* current) {
-  // no students
-  if (head == NULL) {
-    cout << "You have no students!" << endl;
+void remove_student (Node** &ht, int id, int size) {
+  int idx = hash(id);
+  Node* cur = ht[idx]; Node* prev = NULL;
+  bool found = false;
+
+  // iterate until the student is found
+  while (cur != NULL && !found) {
+    if (cur->getStudent()->getID() == id) {
+      found = true;
+    }
+    else {
+      prev = cur;
+      cur = cur->getNext();
+    }
+  }
+  
+  // not found
+  if (!found) { cout << "Student not found."; return; }
+
+  // cur is the head node
+  if (prev == NULL) { 
+    Student* s = cur->getStudent();
+    Node* next = cur->getNext();
+    ht[idx] = next;
+    delete s; cout << "Student removed from database." << endl;
     return;
   }
-  // head is the student
-  else if (id == head->getStudent()->getID()) {
-    Student* s = head->getStudent();
-    Node* next = head->getNext();
-    head = next;
-    delete s;
-    cout << "Poof! They're gone." << endl;
-    return;
-  }
-  // student not found
-  else if (current == NULL) {
-    cout << "That student doesn't exist!" << endl;
-    return;
-  }
-  // student is the current node
-  else if (id == current->getStudent()->getID()) {
-    Student* s = current->getStudent();
-    Node* next = current->getNext();
-    previous->setNext(next);
-    delete s;
-    cout << "Poof! They're gone." << endl;
-    return;
-  }
-  // go to next student
+
+  // cur is not the head node
   else {
-    recurse (id, head, current, current->getNext());
+    Student* s = cur->getStudent();
+    Node* next = cur->getNext();
+    prev->setNext(next); 
+    delete s; cout << "Student removed from database." << endl;
+    return;
   }
+  return;
 }
   
  
-void remove (Node* &head) {
+void remove (Node** ht, int size) {
   cout << "ID number of student to be deleted?" << endl;
   int num;
   cin >> num;
   cin.get();
-  // call recursion function
-  recurse (num, head, head, head);
+  // call deletion function
+  remove_student (Node** ht, int id, int size);
   return;
 }
 
-// 4: AVERAGE
-void average (Node* s, int students, float runningTotal) {
-  // no students (avoid divide-by-zero error)
-  if (s == NULL) {
-    cout << "Average GPA: 0.00" << endl;
-  }
-  // add to running total
-  else {
-    runningTotal += s->getStudent()->getGPA();
-    students ++;
-    // no students left
-    if (s->getNext() == NULL) {
-      cout << "Average GPA: " << fixed << setprecision(2) << (float)runningTotal/(float)students << endl;
-      return;
-    }
-    // recurse
-    average(s->getNext(), students, runningTotal);
-  }
+// 4: GENERATE
+void generate (Node** ht) {
+  ifstream fnames ("fnames.txt");
+  ifstream lnames ("lnames.txt");
+
+
+  fnames.close(); lnames.close();
+  return;
 }
 
 // 5: QUIT
