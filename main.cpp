@@ -12,18 +12,18 @@ using namespace std;
 // FUNCTION PROTOTYPES
 void printCmds ();
 // adding students
-void insert_student (Node** &ht, Student* s, int &size);
+bool insert_student (Node** &ht, Student* s, int &size);
 void add (Node** &ht, int &size);
 // removing students
 void remove_student (Node** &ht, int id, int size);
 void remove (Node** &ht, int size);
 // print, generate random students, and quit
 void display (Node** ht, int size);
-void generate (Node** &ht, int size, string fnames[200], string lnames[200]);
+void generate (Node** &ht, int &size, string fnames[200], string lnames[200]);
 void quit (bool &status);
 // hash stuff
 int hashID (int id, int size);
-void rehash (Node** &ht, int newSize, int oldSize);
+bool rehash (Node** &ht, int newSize, int &oldSize);
 void processNames (string fnames[200], string lnames[200]);
 
 // MAIN FUNCTION
@@ -50,8 +50,6 @@ int main () {
     // input
     string input;
     getline(cin, input);
-
-    cout << "SIZE OF LIST: " << size << endl;
 
     // QUIT
     if (input == "QUIT") { quit (isRunning); }
@@ -107,34 +105,38 @@ int hashID (int id, int size) {
     n /= 10;
   }
 
-  idx = 100 * (digits[0] + digits[1]) + 10 * (digits[2] + digits[3]) + digits[4] + digits[5] - digits[0] * digits[5];
+  idx = 100 * (digits[0] + digits[3]) + 10 * (digits[1] + digits[4]) + digits[2] + digits[3];
   
   return idx % size;  
 }
 
 // rehash students if necessary
-void rehash (Node** &ht, int newSize, int oldSize) {
+bool rehash (Node** &ht, int newSize, int &oldSize) {
   // essentially, make a new hash table, rehash, and reassign the new table
   // to the old one
   Node** newHT = new Node* [newSize];
-  for (int i = 0; i < oldSize; i++) {
+  int o = oldSize;
+  oldSize = newSize;
+  bool hasCollision = false;
+  for (int i = 0; i < o; i++) {
     Node* temp = ht[i];
     Student* s;
     while (temp != NULL) {
       s = temp->getStudent();
-      insert_student (newHT, s, newSize);
+      hasCollision |= insert_student (newHT, s, oldSize);
       temp = temp->getNext();
     }
   }
   
   ht = newHT;
-  return;
+  return hasCollision;
 }
 
 // primary methods
 // 1: ADD
-void insert_student (Node** &ht, Student* s, int &size) {
+bool insert_student (Node** &ht, Student* s, int &size) {
   int idx = hashID(s->getID(), size);
+  bool hasCollision = false;
 
   // no collision
   if (ht[idx] == NULL) {
@@ -154,15 +156,10 @@ void insert_student (Node** &ht, Student* s, int &size) {
     temp->setNext(NULL);
       
     if (i >= 3) { // more than or equal to 3 nodes after the head
-      // rehash and change size
-      cout << "Too many collisions! Rehashing..." << endl;
-      int newSize = 2 * size + 1; 
-      rehash (ht, newSize, size);
-      size = newSize;
-      cout << "NEW SIZE: " << size << endl;
+      hasCollision = true;
     }
   }
-  return;
+  return hasCollision;
 }
 
 void add (Node** &ht, int &size) {
@@ -185,8 +182,15 @@ void add (Node** &ht, int &size) {
   s->setID (id);
   s->setGPA (gpa);
   // insert in hash table
-  insert_student (ht, s, size);
-  cout << size << endl;
+  bool hasCollision = insert_student (ht, s, size);
+  while (hasCollision) {
+    // rehash and change size
+    cout << "Too many collisions! Rehashing..." << endl;
+    int newSize = 2 * size + 1;
+    hasCollision = rehash (ht, newSize, size);
+    size = newSize;
+    cout << "Size of new table: " << size << endl;
+  }
   return;
 }
 
@@ -208,7 +212,6 @@ void display (Node** ht, int size) {
 // 3: DELETE
 void remove_student (Node** &ht, int id, int size) {
   int idx = hashID(id, size);
-  cout << idx << " " << size << endl;
   Node* cur = ht[idx]; Node* prev = NULL;
   bool found = false;
 
@@ -256,7 +259,7 @@ void remove (Node** &ht, int size) {
 }
 
 // 4: GENERATE
-void generate (Node** &ht, int size, string fnames[200], string lnames[200]) {
+void generate (Node** &ht, int &size, string fnames[200], string lnames[200]) {
   cout << "How many students to generate?" << endl;
   int n;
   cin >> n; cin.get();
@@ -266,7 +269,7 @@ void generate (Node** &ht, int size, string fnames[200], string lnames[200]) {
   int id = 123456;
   for (int i = 0; i < n; i++) {
     int fidx = rand() % 200, lidx = rand() % 200;
-    int id = rand() % 900000 + 100000;
+    id += rand() % 100;
     float gpa = rand() % 400 * 0.01;
     string first = fnames[fidx];
     string last = lnames[lidx];
@@ -278,7 +281,15 @@ void generate (Node** &ht, int size, string fnames[200], string lnames[200]) {
     s->setID (id);
     s->setGPA (gpa);
     // insert in hash table
-    insert_student (ht, s, size);
+    bool hasCollision = insert_student (ht, s, size);
+    while (hasCollision) {
+      // rehash and change size
+      cout << "Too many collisions! Rehashing..." << endl;
+      int newSize = 2 * size + 1;
+      hasCollision = rehash (ht, newSize, size);
+      size = newSize;
+      cout << "Size of new table: " << size << endl;
+    }
   } 
   return;
 }
