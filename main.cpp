@@ -12,7 +12,7 @@ using namespace std;
 // FUNCTION PROTOTYPES
 void printCmds ();
 // adding students
-bool insert_student (Node** &ht, Student* s, int &size);
+bool insert_student (Node** &ht, Student* s, int size);
 void add (Node** &ht, int &size);
 // removing students
 void remove_student (Node** &ht, int id, int size);
@@ -23,7 +23,7 @@ void generate (Node** &ht, int &size, string fnames[200], string lnames[200]);
 void quit (bool &status);
 // hash stuff
 int hashID (int id, int size);
-bool rehash (Node** &ht, int newSize, int &oldSize);
+bool rehash (Node** &ht, int oldSize);
 void processNames (string fnames[200], string lnames[200]);
 
 // MAIN FUNCTION
@@ -97,34 +97,26 @@ void processNames (string fnames[200], string lnames[200]) {
 
 // hash function - TODODODODODO
 int hashID (int id, int size) {
-  int idx = 0;
-  int digits[6];
-  int n = id;
-  for (int i = 5; i >= 0; i--) {
-    digits[i] = n % 10;
-    n /= 10;
-  }
-
-  idx = 100 * (digits[0] + digits[3]) + 10 * (digits[1] + digits[4]) + digits[2] + digits[3];
-  
-  return idx % size;  
+  return id % size;  
 }
 
 // rehash students if necessary
-bool rehash (Node** &ht, int newSize, int &oldSize) {
+bool rehash (Node** &ht, int oldSize) {
   // essentially, make a new hash table, rehash, and reassign the new table
   // to the old one
+  int newSize = oldSize * 2 + 1;
   Node** newHT = new Node* [newSize];
-  int o = oldSize;
-  oldSize = newSize;
+  for (int i = 0; i < newSize; i++) {
+    newHT[i] = NULL;
+  }
   bool hasCollision = false;
-  for (int i = 0; i < o; i++) {
-    Node* temp = ht[i];
+  for (int i = 0; i < oldSize; i++) {
+    Node* cur = ht[i];
     Student* s;
-    while (temp != NULL) {
-      s = temp->getStudent();
-      hasCollision |= insert_student (newHT, s, oldSize);
-      temp = temp->getNext();
+    while (cur != NULL) {
+      s = cur->getStudent();
+      hasCollision |= insert_student (newHT, s, newSize);
+      cur = cur->getNext();
     }
   }
   
@@ -134,7 +126,7 @@ bool rehash (Node** &ht, int newSize, int &oldSize) {
 
 // primary methods
 // 1: ADD
-bool insert_student (Node** &ht, Student* s, int &size) {
+bool insert_student (Node** &ht, Student* s, int size) {
   int idx = hashID(s->getID(), size);
   bool hasCollision = false;
 
@@ -146,14 +138,14 @@ bool insert_student (Node** &ht, Student* s, int &size) {
 
   // collision
   else {
-    Node* temp = ht[idx];
+    Node* cur = ht[idx];
     int i = 1;
-    while (temp->getNext() != NULL) {
-      temp = temp->getNext(); i++;
+    while (cur->getNext() != NULL) {
+      cur = cur->getNext(); i++;
     }
-    temp->setNext(new Node(s));
-    temp = temp->getNext();
-    temp->setNext(NULL);
+    cur->setNext(new Node(s));
+    cur = cur->getNext();
+    cur->setNext(NULL);
       
     if (i >= 3) { // more than or equal to 3 nodes after the head
       hasCollision = true;
@@ -186,9 +178,8 @@ void add (Node** &ht, int &size) {
   while (hasCollision) {
     // rehash and change size
     cout << "Too many collisions! Rehashing..." << endl;
-    int newSize = 2 * size + 1;
-    hasCollision = rehash (ht, newSize, size);
-    size = newSize;
+    hasCollision = rehash (ht, size);
+    size *= 2; size++;
     cout << "Size of new table: " << size << endl;
   }
   return;
@@ -197,13 +188,13 @@ void add (Node** &ht, int &size) {
 // 2: PRINT
 void display (Node** ht, int size) {
   for (int i = 0; i < size; i++) {
-    Node* temp = ht[i];
+    Node* cur = ht[i];
     // iterate through each head node in the hash table
-    while (temp != NULL) {
-      Student* s = temp->getStudent();
+    while (cur != NULL) {
+      Student* s = cur->getStudent();
       cout << *(s->getFirst()) << " " << *(s->getLast()) << " -- ID: " << s->getID();
       cout << " -- GPA: " << fixed << setprecision(2) << s->getGPA() << endl;
-      temp = temp->getNext();
+      cur = cur->getNext();
     }
   }
   return;
@@ -227,25 +218,19 @@ void remove_student (Node** &ht, int id, int size) {
   }
   
   // not found
-  if (!found) { cout << "Student not found."; return; }
+  if (!found) { cout << "Student not found." << endl; return; }
 
+  Student* s = cur->getStudent();
+  Node* next = cur->getNext();
+  
   // cur is the head node
-  if (prev == NULL) { 
-    Student* s = cur->getStudent();
-    Node* next = cur->getNext();
-    ht[idx] = next;
-    delete s; cout << "Student removed from database." << endl;
-    return;
-  }
-
+  if (prev == NULL) { ht[idx] = next; }
   // cur is not the head node
-  else {
-    Student* s = cur->getStudent();
-    Node* next = cur->getNext();
-    prev->setNext(next); 
-    delete s; cout << "Student removed from database." << endl;
-    return;
-  }
+  else { prev->setNext(next); }
+  
+  delete s; cout << "Student removed from database." << endl;
+
+  return;
 }
 
 void remove (Node** &ht, int size) {
@@ -285,9 +270,8 @@ void generate (Node** &ht, int &size, string fnames[200], string lnames[200]) {
     while (hasCollision) {
       // rehash and change size
       cout << "Too many collisions! Rehashing..." << endl;
-      int newSize = 2 * size + 1;
-      hasCollision = rehash (ht, newSize, size);
-      size = newSize;
+      hasCollision = rehash (ht, size);
+      size *= 2; size++;
       cout << "Size of new table: " << size << endl;
     }
   } 
